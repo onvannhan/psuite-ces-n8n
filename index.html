@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI CV Screening System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #8b5cf6;
+      --primary-hover: #7c3aed;
+      --secondary: #3b82f6;
+      --success: #10b981;
+      --success-hover: #059669;
+      --danger: #ef4444;
+      --bg-dark: #0f172a;
+      --card-bg: rgba(255, 255, 255, 0.05);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --text-light: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #020617 0%, #1e1b4b 100%);
+      color: var(--text-light);
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Background blur bubbles */
+    .bubble {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      z-index: -1;
+      opacity: 0.5;
+    }
+    .bubble-1 {
+      top: -100px;
+      left: -100px;
+      width: 400px;
+      height: 400px;
+      background: var(--primary);
+    }
+    .bubble-2 {
+      bottom: -100px;
+      right: -100px;
+      width: 300px;
+      height: 300px;
+      background: var(--secondary);
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 600;
+      background: linear-gradient(to right, #c4b5fd, #93c5fd);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .glass-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+    
+    .glass-card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      border-radius: 16px;
+      padding: 2px;
+      background: linear-gradient(45deg, var(--primary), var(--secondary));
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 400;
+      color: #cbd5e1;
+      font-size: 0.9rem;
+    }
+
+    input[type="text"],
+    textarea {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      color: var(--text-light);
+      font-size: 1rem;
+      outline: none;
+      transition: all 0.3s;
+    }
+
+    input[type="text"]:focus,
+    textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 150px;
+    }
+
+    /* Dropzone */
+    .dropzone {
+      border: 2px dashed rgba(139, 92, 246, 0.5);
+      border-radius: 12px;
+      padding: 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: rgba(0, 0, 0, 0.1);
+    }
+
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--primary);
+      background: rgba(139, 92, 246, 0.1);
+    }
+
+    .dropzone-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .dropzone-text {
+      color: var(--text-muted);
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .file-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .file-chip {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .remove-file {
+      cursor: pointer;
+      color: var(--danger);
+      font-weight: bold;
+    }
+
+    .remove-file:hover {
+      color: #fca5a5;
+    }
+
+    /* Buttons */
+    .btn {
+      width: 100%;
+      padding: 1rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary {
+      background: linear-gradient(to right, var(--primary), var(--secondary));
+    }
+
+    .btn-primary:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+    }
+    
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .btn-success {
+      background: var(--success);
+    }
+
+    .btn-success:hover {
+      background: var(--success-hover);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    }
+
+    /* Progress bar */
+    .progress-container {
+      margin-top: 1.5rem;
+      display: none;
+    }
+
+    .progress-bar-wrap {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      height: 8px;
+      overflow: hidden;
+      margin-bottom: 0.5rem;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(to right, var(--primary), #a855f7);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .progress-text {
+      text-align: center;
+      font-size: 0.9rem;
+      color: #e2e8f0;
+    }
+
+    /* Table */
+    .table-container {
+      overflow-x: auto;
+      display: none;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+
+    th, td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    th {
+      font-weight: 600;
+      color: #cbd5e1;
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .badge-pass { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .badge-fail { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+    
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="bubble bubble-1"></div>
+  <div class="bubble bubble-2"></div>
+
+  <div class="container">
+    <header>
+      <h1>🤖 AI CV Screening System</h1>
+      <p style="color: var(--text-muted)">Hệ thống chấm điểm và phân tích hồ sơ ứng viên tự động</p>
+    </header>
+
+    <main>
+      <!-- Card 1: Thông tin đợt tuyển -->
+      <div class="glass-card">
+        <div class="form-group">
+          <label for="campaign">Tên chiến dịch tuyển dụng</label>
+          <input type="text" id="campaign" placeholder="VD: Tuyển dụng Frontend Developer Q3/2026">
+        </div>
+        <div class="form-group">
+          <label for="jd">Mô tả công việc (JD)</label>
+          <textarea id="jd" placeholder="Dán nội dung Job Description vào đây..."></textarea>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label for="emails">Email nhận báo cáo (cách nhau bằng dấu phẩy)</label>
+          <input type="text" id="emails" placeholder="sếp1@example.com, hr@example.com">
+        </div>
+      </div>
+
+      <!-- Card 2: Tải Hồ Sơ -->
+      <div class="glass-card">
+        <label>Danh sách CV ứng viên</label>
+        <div class="dropzone" id="dropzone">
+          <div class="dropzone-icon">📂</div>
+          <div class="dropzone-text">Kéo thả CV vào đây hoặc nhấn để chọn<br><small>(Hỗ trợ .pdf, .txt, .docx)</small></div>
+          <input type="file" id="fileInput" accept=".pdf,.txt,.docx" multiple>
+        </div>
+        <div class="file-list" id="fileList"></div>
+      </div>
+
+      <!-- Action Button -->
+      <button class="btn btn-primary" id="btnAnalyze">🚀 Bắt Đầu Phân Tích AI</button>
+
+      <!-- Progress -->
+      <div class="progress-container" id="progressContainer">
+        <div class="progress-bar-wrap">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div class="progress-text" id="progressText">Đang xử lý: 0/0</div>
+      </div>
+
+      <!-- Card 3: Kết quả -->
+      <div class="glass-card table-container" id="resultCard">
+        <h3 style="margin-bottom: 1rem;">📊 Kết Quả Phân Tích</h3>
+        <div style="overflow-x: auto;">
+          <table id="resultTable">
+            <thead>
+              <tr>
+                <th width="5%">#</th>
+                <th width="20%">Tên Ứng Viên</th>
+                <th width="10%">Điểm (%)</th>
+                <th width="50%">Nhận Xét</th>
+                <th width="15%">Kết Luận</th>
+              </tr>
+            </thead>
+            <tbody id="resultBody">
+              <!-- Results inserted here -->
+            </tbody>
+          </table>
+        </div>
+        
+        <button class="btn btn-success hidden" id="btnReport" style="margin-top: 1.5rem;">📧 Gửi Báo Cáo Cho Sếp</button>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    const WEBHOOK_1_URL = "https://n8n.pecc2ese.com/webhook/phan-tich-cv";
+    const WEBHOOK_2_URL = "https://n8n.pecc2ese.com/webhook/cv-send-mail";
+
+    const fileInput = document.getElementById('fileInput');
+    const dropzone = document.getElementById('dropzone');
+    const fileListEl = document.getElementById('fileList');
+    const btnAnalyze = document.getElementById('btnAnalyze');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const resultCard = document.getElementById('resultCard');
+    const resultBody = document.getElementById('resultBody');
+    const btnReport = document.getElementById('btnReport');
+    
+    let selectedFiles = [];
+    let allResults = [];
+
+    // Drag & Drop Handling
+    dropzone.addEventListener('click', () => fileInput.click());
+    
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('dragover');
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      if (e.dataTransfer.files.length) {
+        handleFiles(e.dataTransfer.files);
+      }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length) {
+        handleFiles(e.target.files);
+      }
+      // Reset input value to allow selecting the same file again if removed
+      fileInput.value = '';
+    });
+
+    function handleFiles(files) {
+      for (const file of files) {
+        // Prevent simple duplicates by matching name and size
+        if (!selectedFiles.some(f => f.name === file.name && f.size === file.size)) {
+          selectedFiles.push(file);
+        }
+      }
+      renderFileList();
+    }
+
+    function renderFileList() {
+      fileListEl.innerHTML = '';
+      selectedFiles.forEach((file, index) => {
+        const chip = document.createElement('div');
+        chip.className = 'file-chip';
+        const displayName = file.name.length > 30 ? file.name.substring(0, 30) + '...' : file.name;
+        chip.innerHTML = `
+          <span title="${file.name}">${displayName}</span>
+          <span class="remove-file" data-index="${index}">X</span>
+        `;
+        fileListEl.appendChild(chip);
+      });
+
+      document.querySelectorAll('.remove-file').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const index = parseInt(e.target.getAttribute('data-index'));
+          selectedFiles.splice(index, 1);
+          renderFileList();
+        });
+      });
+    }
+
+    // Append Table Row
+    function appendRowToTable(index, filename, result) {
+      if (resultCard.style.display !== 'block') {
+        resultCard.style.display = 'block';
+      }
+      
+      const tr = document.createElement('tr');
+      
+      const name = result.name || result.CandidateName || filename;
+      const score = result.score || result.Score || 0;
+      const comment = result.comment || result.Comment || result.summary || result.Summary || 'Chưa có nhận xét';
+      
+      const isPass = result.status ? result.status.toLowerCase() === 'pass' : Number(score) >= 70;
+      const statusText = isPass ? 'ĐẠT' : 'LOẠI';
+      const badgeClass = isPass ? 'badge-pass' : 'badge-fail';
+
+      tr.innerHTML = `
+        <td>${index}</td>
+        <td>${name}</td>
+        <td><strong>${score}</strong></td>
+        <td>${comment}</td>
+        <td><span class="badge ${badgeClass}">${statusText}</span></td>
+      `;
+      resultBody.appendChild(tr);
+    }
+
+    // Analyze Action
+    btnAnalyze.addEventListener('click', async () => {
+      const campaign = document.getElementById('campaign').value.trim();
+      const jd = document.getElementById('jd').value.trim();
+      
+      if (!campaign) {
+        alert("Vui lòng nhập tên chiến dịch tuyển dụng.");
+        return;
+      }
+      if (!jd) {
+        alert("Vui lòng nhập Mô tả công việc (JD).");
+        return;
+      }
+      if (selectedFiles.length === 0) {
+        alert("Vui lòng tải lên ít nhất 1 file CV để phân tích.");
+        return;
+      }
+
+      // Prepare UI
+      btnAnalyze.disabled = true;
+      btnAnalyze.innerHTML = "⏳ Đang phân tích...";
+      progressContainer.style.display = 'block';
+      resultBody.innerHTML = '';
+      btnReport.classList.add('hidden');
+      resultCard.style.display = 'none';
+      allResults = [];
+
+      const total = selectedFiles.length;
+      updateProgress(0, total);
+
+      let currentIndex = 1;
+      
+      // Process sequentially
+      for (const file of selectedFiles) {
+        updateProgress(currentIndex - 1, total, `Đang mổ xẻ CV: ${file.name}...`);
+
+        try {
+          const formData = new FormData();
+          formData.append('campaign', campaign);
+          formData.append('jd', jd);
+          formData.append('file', file);
+
+          const response = await fetch(WEBHOOK_1_URL, {
+            method: 'POST',
+            body: formData
+          });
+
+          if (!response.ok) {
+            throw new Error(`API Error: ${response.status} ${response.statusText}`);
+          }
+
+          const result = await response.json();
+          allResults.push(result);
+          
+          appendRowToTable(currentIndex, file.name, result);
+        } catch (error) {
+          console.error("Lỗi khi xử lý file:", file.name, error);
+          appendRowToTable(currentIndex, file.name, {
+            name: file.name,
+            score: "0",
+            comment: "❌ Lỗi khi phân tích: " + error.message,
+            status: "fail"
+          });
+        }
+        
+        updateProgress(currentIndex, total);
+        currentIndex++;
+      }
+
+      // Finish state
+      btnAnalyze.style.display = 'none';
+      btnReport.classList.remove('hidden');
+      progressText.innerHTML = `✅ Đã chấm xong ${total}/${total} hồ sơ!`;
+    });
+
+    // Update Progress Bar
+    function updateProgress(current, total, customText) {
+      const percentage = (current / total) * 100;
+      progressBar.style.width = percentage + '%';
+      if (customText) {
+        progressText.innerText = customText;
+      } else {
+        progressText.innerText = 'Đang xử lý: ' + current + '/' + total;
+      }
+    }
+
+    // Send Report Action
+    btnReport.addEventListener('click', async () => {
+      const campaign = document.getElementById('campaign').value.trim();
+      const emailsRaw = document.getElementById('emails').value;
+      const recipients = emailsRaw.split(',').map(e => e.trim()).filter(e => e !== '');
+
+      if (recipients.length === 0) {
+        alert("Vui lòng nhập ít nhất 1 email để gửi báo cáo.");
+        return;
+      }
+
+      const originalText = btnReport.innerHTML;
+      btnReport.disabled = true;
+      btnReport.innerHTML = "⏳ Đang kết nối server gửi email...";
+
+      try {
+        const payload = {
+          campaign: campaign,
+          recipients: recipients,
+          results: allResults // Attach results if needed by webhook
+        };
+
+        const response = await fetch(WEBHOOK_2_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          throw new Error("Lỗi Server: " + response.statusText);
+        }
+
+        alert("✅ Báo cáo đã được định tuyến và gửi đến trưởng phòng thành công!");
+      } catch (error) {
+        console.error("Lỗi gửi báo cáo:", error);
+        alert("❌ Có lỗi xảy ra khi gửi báo cáo: " + error.message);
+      } finally {
+        btnReport.disabled = false;
+        btnReport.innerHTML = originalText;
+      }
+    });
+  </script>
+</body>
+</html>
